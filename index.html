@@ -11,7 +11,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Simple Github Client</title>
-  <meta name="description" content="Simple Github Client">
+  <meta name="description" content="Simple GitHub Client">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://raw.githubusercontent.com/h5bp/html5-boilerplate/master/css/normalize.css">
   <link rel="stylesheet" href="https://raw.githubusercontent.com/h5bp/html5-boilerplate/master/css/main.css">
@@ -19,16 +19,49 @@
   <link rel="stylesheet" href="css/app.css"/>
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.1/modernizr.min.js"></script>
 </head>
-<body ng-app="githubClient">
+<body ng-app="githubClient" ng-controller="MainCtrl">
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
   your browser</a> to improve your experience.</p>
 <![endif]-->
 
-<div class="container" ng-controller="MainCtrl">
-  <ul>
-    <li ng-repeat="a in awesomeThings">{{ a }}</li>
-  </ul>
+<div class="container-fluid" ng-cloak>
+  <div class="row">
+    <div class="col-sm-12">
+      <h1 class="page-header">Simple GitHub Client</h1>
+
+      <h4>Repositories</h4>
+      <input type="text"
+             ng-model="selectedRepo"
+             placeholder="Repositories from GitHub"
+             typeahead="repo for repo in searchProject($viewValue)"
+             typeahead-loading="searchingRepos"
+             typeahead-on-select="fetchContributors(selectedRepo)"
+             class="form-control">
+      <i ng-show="searchingRepos"
+         class="glyphicon glyphicon-refresh"></i>
+
+      <p></p>
+      <div class="panel panel-default">
+        <div class="panel-heading">Contributors</div>
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Login</th>
+            <th>Contributions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr ng-repeat="contributor in contributors">
+            <td>{{ contributor.login }}</td>
+            <td>{{ contributor.contributions }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <!--[if lt IE 9]>
@@ -39,6 +72,8 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 
 <script src="js/app.js"></script>
 </body>

@@ -2,15 +2,31 @@
 
 angular.module('githubClient', ['ui.bootstrap'])
 
-  .controller('MainCtrl', function ($scope, $http) {
+  .config(function ($httpProvider) {
+
+    $httpProvider.interceptors.push(
+      function () {
+        return {
+          request: function (config) {
+            var isCallToGitHub = config.url.indexOf('https://api.github.com') === 0;
+
+            if (isCallToGitHub) {
+              config.headers.accept = 'application/vnd.github.v3+json';
+            }
+
+            return config;
+          }
+        };
+      }
+    );
+
+  })
+
+  .controller('MainCtrl', function ($scope, $http, $q) {
 
     $scope.searchProject = function (query) {
 
       var url = 'https://api.github.com/search/repositories';
-
-      var headers = {
-        Accept: 'application/vnd.github.v3+json'
-      };
 
       var params = {
         q: query,
@@ -18,26 +34,30 @@ angular.module('githubClient', ['ui.bootstrap'])
         order: 'desc'
       };
 
-      return $http.get(url, { params: params, headers: headers })
+      return $http.get(url, { params: params })
         .then(function (res) {
           var response = res.data;
           return response.items;
         });
     };
 
-    $scope.fetchContributors = function (selectedRepo) {
+    function fetchContributors (selectedRepo) {
+      $scope.isFetchingContributors = true;
+      $scope.contributors = [];
 
-      console.info('> selectedRepo ', selectedRepo);
+      //  GET /repos/:owner/:repo/contributors
+      var contributorsUrl = selectedRepo.contributors_url.replace('{/sha}', '');
 
-      var url = 'https://api.github.com/repos/' + selectedRepo + '/contributors';
-      var headers = {
-        Accept: 'application/vnd.github.v3+json'
-      };
-      return $http.get(url, { headers: headers })
+      return $http.get(contributorsUrl)
+
         .then(function (res) {
-          var response = res.data;
-          $scope.contributors = response;
-        });
+          $scope.contributors = res.data;
+        })
+
+        .finally(function () {
+          $scope.isFetchingContributors = false;
+        })
+        ;
 
     };
 
@@ -47,11 +67,7 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     function fetchCommitsUntil100 (commitsUrl) {
 
-      var headers = {
-        Accept: 'application/vnd.github.v3+json'
-      };
-
-      return $http.get(commitsUrl, { headers: headers })
+      return $http.get(commitsUrl)
         .then(function (response) {
 
           var commits = response.data;
@@ -64,6 +80,7 @@ angular.module('githubClient', ['ui.bootstrap'])
 
           var hasReachedLimit = _($scope.commits).size() >= COMMITS_LIMIT;
           if (hasReachedLimit) {
+            $scope.commits = _.first($scope.commits, 100);
             return;
           }
 
@@ -90,7 +107,7 @@ angular.module('githubClient', ['ui.bootstrap'])
         });
     }
 
-    $scope.fetchLatest100Commits = function (selectedRepo) {
+    function fetchLatest100Commits (selectedRepo) {
       $scope.isFetchingCommits = true;
       $scope.commits = [];
 
@@ -98,16 +115,25 @@ angular.module('githubClient', ['ui.bootstrap'])
       //  GET /repos/:owner/:repo/commits
       var commitsUrl = selectedRepo.commits_url.replace('{/sha}', '');
 
-      fetchCommitsUntil100(commitsUrl)
+      return fetchCommitsUntil100(commitsUrl)
         .finally(function () {
           $scope.isFetchingCommits = false;
         })
-      ;
+        ;
     };
 
     $scope.noop = function (selected) {
       console.info('> ', selected);
     }
+
+    $scope.onSelectRepo = function (selectedRepo) {
+
+      $q.all([
+        fetchLatest100Commits(selectedRepo),
+        fetchContributors(selectedRepo)
+      ]);
+
+    };
 
   });
 

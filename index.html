@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="https://raw.githubusercontent.com/h5bp/html5-boilerplate/master/css/normalize.css">
   <link rel="stylesheet" href="https://raw.githubusercontent.com/h5bp/html5-boilerplate/master/css/main.css">
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="css/app.css"/>
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.1/modernizr.min.js"></script>
 </head>
@@ -28,33 +29,41 @@
 <div class="container-fluid" ng-cloak>
   <div class="row">
     <div class="col-sm-12">
-      <h1 class="page-header">Simple GitHub Client</h1>
+      <h1 class="page-header">Simple GitHub Client <img src="https://github.global.ssl.fastly.net/images/icons/emoji/octocat.png" class="github-logo"></h1>
 
       <h4>Repositories</h4>
       <input type="text"
              ng-model="selectedRepo"
-             placeholder="Repositories from GitHub"
-             typeahead="repo for repo in searchProject($viewValue)"
+             placeholder="Type the name of a repository"
+             typeahead="repo as repo.full_name for repo in searchProject($viewValue)"
              typeahead-loading="searchingRepos"
-             typeahead-on-select="fetchContributors(selectedRepo)"
+             typeahead-on-select="fetchLatest100Commits(selectedRepo)"
+             typeahead-wait-ms="500"
+             typeahead-min-length="3"
+             ng-disabled="isFetchingCommits"
              class="form-control">
       <i ng-show="searchingRepos"
-         class="glyphicon glyphicon-refresh"></i>
+         class="fa fa-refresh fa-spin"></i>
 
       <p></p>
       <div class="panel panel-default">
-        <div class="panel-heading">Contributors</div>
+        <div class="panel-heading">Commits</div>
         <table class="table">
           <thead>
           <tr>
-            <th>Login</th>
-            <th>Contributions</th>
+            <th>#</th>
+            <th>SHA</th>
+            <th>Committer</th>
+            <th>Message</th>
           </tr>
           </thead>
           <tbody>
-          <tr ng-repeat="contributor in contributors">
-            <td>{{ contributor.login }}</td>
-            <td>{{ contributor.contributions }}</td>
+          <tr ng-repeat="commit in commits"
+              ng-if="$index < 100">
+            <td>{{ $index + 1 }}</td>
+            <td>{{ commit.sha }}</td>
+            <td>{{ commit.committer.login }}</td>
+            <td>{{ commit.commit.message }}</td>
           </tr>
           </tbody>
         </table>

@@ -94,3 +94,8 @@ body {
   display: inline-block;
   border-radius: 50%;
 }
+
+.github-logo {
+  margin-top: -30px;
+  margin-left: 5px;
+}

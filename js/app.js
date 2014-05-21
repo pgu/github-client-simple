@@ -4,6 +4,10 @@ angular.module('githubClient', ['ui.bootstrap'])
 
   .config(function ($httpProvider) {
 
+    // TODO X-RateLimit-Limit:60
+//    X-RateLimit-Remaining:55
+//    X-RateLimit-Reset:1400704560
+
     $httpProvider.interceptors.push(
       function () {
         return {
@@ -22,7 +26,51 @@ angular.module('githubClient', ['ui.bootstrap'])
 
   })
 
-  .controller('MainCtrl', function ($scope, $http, $q) {
+  .factory('helper', function () {
+
+    //  ex: Header Link:
+    //  <https://api.commits?page=3>; rel="next",
+    //  <https://api.commits?page=1>; rel="first",
+    //  <https://api.commits?page=1>; rel="prev"
+    //  <https://api.contributors?page=2>; rel="next",
+    //  <https://api.contributors?page=2>; rel="last"
+
+    function getUrl (type, response) {
+      var headers = response.headers();
+      var rel = 'rel="' + type + '"';
+
+      var noLinkInResponse = !_.has(headers, 'link') ||
+        headers.link.indexOf(rel) === -1;
+
+      if (noLinkInResponse) {
+        return '';
+      }
+
+      var links = headers.link.split(', ');
+      var theLink = _.find(links, function (link) {
+        return link.indexOf(rel) !== -1;
+      });
+
+      var fmtUrl = _(theLink.split(';')).first();
+      var url = fmtUrl.replace(/<|>/g, '');
+
+      return url;
+    }
+
+    return {
+
+      getNextUrl: function (response) {
+        return getUrl('next', response);
+      },
+
+      getPreviousUrl: function (response) {
+        return getUrl('prev', response);
+      }
+
+    };
+  })
+
+  .controller('MainCtrl', function ($scope, $http, $q, helper) {
 
     $scope.searchProject = function (query) {
 
@@ -41,16 +89,20 @@ angular.module('githubClient', ['ui.bootstrap'])
         });
     };
 
-    function fetchContributors (selectedRepo) {
+    $scope.goToContributors = function (url) {
+      if (!url) {
+        return;
+      }
+
       $scope.isFetchingContributors = true;
       $scope.contributors = [];
 
-      //  GET /repos/:owner/:repo/contributors
-      var contributorsUrl = selectedRepo.contributors_url.replace('{/sha}', '');
 
-      return $http.get(contributorsUrl)
+      return $http.get(url)
 
         .then(function (res) {
+          $scope.contributorsPreviousUrl = helper.getPreviousUrl(res);
+          $scope.contributorsNextUrl = helper.getNextUrl(res);
           $scope.contributors = res.data;
         })
 
@@ -128,10 +180,11 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     $scope.onSelectRepo = function (selectedRepo) {
 
-      $q.all([
-        fetchLatest100Commits(selectedRepo),
-        fetchContributors(selectedRepo)
-      ]);
+      //  GET /repos/:owner/:repo/contributors
+      var contributorsUrl = selectedRepo.contributors_url;
+
+      $scope.goToContributors(contributorsUrl);
+//      fetchLatest100Commits(selectedRepo);
 
     };
 

@@ -67,6 +67,64 @@ angular.module('githubClient', ['ui.bootstrap'])
     };
   })
 
+  .directive('contributorsChart', function () {
+    return {
+      restrict: 'E',
+      template: '<div></div>',
+      replace: true,
+      scope: {
+        data: '='
+      },
+      link: function ($scope, element, attrs) {
+
+        var id = attrs.id;
+
+        $scope.$watch('data', function () {
+
+          if (_.isEmpty($scope.data)) {
+            $('#' + id).empty();
+            return;
+          }
+
+          $('#' + id).highcharts({
+            chart: {
+              plotBackgroundColor: null,
+              plotBorderWidth: null,
+              plotShadow: false
+            },
+            title: {
+              text: 'Impacts of each contributor based on their commits number'
+            },
+            tooltip: {
+              pointFormat: '{series.name}: <b>{point.y}</b> commits'
+            },
+            plotOptions: {
+              pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                  enabled: true,
+                  format: '<b>{point.name}</b>: {point.y}',
+                  style: {
+                    color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                  }
+                }
+              }
+            },
+            series: [
+              {
+                type: 'pie',
+                name: 'Contributor share',
+                data: $scope.data
+              }
+            ]
+          });
+        });
+
+      }
+    }
+  })
+
   .controller('MainCtrl', function ($scope, $http, $q, helper) {
 
     $scope.searchProject = function (query) {
@@ -180,10 +238,30 @@ angular.module('githubClient', ['ui.bootstrap'])
       console.info('> ', selected);
     }
 
+    $scope.nbCommits = 100;
+
     $scope.onSelectRepo = function (selectedRepo) {
 
       $scope.goToContributors(selectedRepo.contributors_url); //  GET /repos/:owner/:repo/contributors
-      fetchLatestCommits(selectedRepo, 100);
+
+      $scope.contributorsChartData = [];
+
+      fetchLatestCommits(selectedRepo, $scope.nbCommits)
+        .then(function () {
+
+          $scope.contributorsChartData = _($scope.commits)
+            .groupBy(function (commit) {
+              return commit.commit.author.name; // { john: [commits], jane: [commits] }
+            })
+            .mapValues(function (commits) { // { john: 42, jane: 21 }
+              return _(commits).size();
+            })
+            .pairs() // [ [john, 42], [jane, 21] ]
+            .sortBy('1') // [ [jane, 21], [john, 42] ]
+            .valueOf()
+          ;
+
+        });
 
     };
 

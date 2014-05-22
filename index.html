@@ -26,7 +26,7 @@
   your browser</a> to improve your experience.</p>
 <![endif]-->
 
-<div class="container-fluid" ng-cloak>
+<div class="container" ng-cloak>
   <div class="row">
     <div class="col-xs-12">
       <h1 class="page-header">Simple GitHub Client <img
@@ -118,27 +118,17 @@
 
       <p></p>
 
-      <!--<div class="panel panel-default">-->
-      <!--<div class="panel-heading">Commits</div>-->
-      <!--<table class="table">-->
-      <!--<thead>-->
-      <!--<tr>-->
-      <!--<th>#</th>-->
-      <!--<th>SHA</th>-->
-      <!--<th>Committer</th>-->
-      <!--<th>Message</th>-->
-      <!--</tr>-->
-      <!--</thead>-->
-      <!--<tbody>-->
-      <!--<tr ng-repeat="commit in commits">-->
-      <!--<td>{{ $index + 1 }}</td>-->
-      <!--<td>{{ commit.sha }}</td>-->
-      <!--<td>{{ commit.committer.login }}</td>-->
-      <!--<td>{{ commit.commit.message }}</td>-->
-      <!--</tr>-->
-      <!--</tbody>-->
-      <!--</table>-->
-      <!--</div>-->
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <i class="glyphicon glyphicon-fire"></i>
+          Contributors for the latest {{ nbCommits }} commits
+        </div>
+        <div class="panel-body">
+          <contributors-chart id="contributors100"
+                              class="contributors-chart"
+                              data="contributorsChartData"></contributors-chart>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -154,6 +144,7 @@
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script async defer src="//cdnjs.cloudflare.com/ajax/libs/highcharts/4.0.1/highcharts.js"></script>
 
 <script src="js/app.js"></script>
 </body>

@@ -62,6 +62,7 @@
                   <a ng-repeat="contributor in contributors"
                      ng-if="$index < 10"
                      class="list-group-item">
+                    <span class="badge pull-right" data-toggle="tooltip" data-placement="top" title="Contributions">{{ contributor.contributions }}</span>
                     {{ contributor.login }}
                   </a>
                 </div>
@@ -71,6 +72,7 @@
                   <a ng-repeat="contributor in contributors"
                      ng-if="9 < $index && $index < 20"
                      class="list-group-item">
+                    <span class="badge pull-right" data-toggle="tooltip" data-placement="top" title="Contributions">{{ contributor.contributions }}</span>
                     {{ contributor.login }}
                   </a>
                 </div>
@@ -80,6 +82,7 @@
                   <a ng-repeat="contributor in contributors"
                      ng-if="19 < $index"
                      class="list-group-item">
+                    <span class="badge pull-right" data-toggle="tooltip" data-placement="top" title="Contributions">{{ contributor.contributions }}</span>
                     {{ contributor.login }}
                   </a>
                 </div>
@@ -94,7 +97,7 @@
                 <button type="button"
                         class="btn btn-link"
                         ng-disabled="!contributorsPreviousUrl"
-                  >&larr; Previous
+                  >&larr; {{ contributorsPreviousLabel }}
                 </button>
               </li>
 
@@ -104,7 +107,7 @@
                 <button type="button"
                         class="btn btn-link"
                         ng-disabled="!contributorsNextUrl"
-                  >Next &rarr;</button>
+                  >{{ contributorsNextLabel }} &rarr;</button>
               </li>
 
             </ul>

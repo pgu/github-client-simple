@@ -59,13 +59,10 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     return {
 
-      getNextUrl: function (response) {
-        return getUrl('next', response);
-      },
-
-      getPreviousUrl: function (response) {
-        return getUrl('prev', response);
-      }
+      getNextUrl: _.partial(getUrl, 'next'),
+      getPreviousUrl: _.partial(getUrl, 'prev'),
+      getFirstUrl: _.partial(getUrl, 'first'),
+      getLastUrl: _.partial(getUrl, 'last')
 
     };
   })
@@ -90,13 +87,12 @@ angular.module('githubClient', ['ui.bootstrap'])
     };
 
     $scope.goToContributors = function (url) {
-      if (!url) {
-        return;
-      }
 
       $scope.isFetchingContributors = true;
       $scope.contributors = [];
 
+      $scope.contributorsPreviousLabel = '';
+      $scope.contributorsNextLabel = '';
 
       return $http.get(url)
 
@@ -104,6 +100,13 @@ angular.module('githubClient', ['ui.bootstrap'])
           $scope.contributorsPreviousUrl = helper.getPreviousUrl(res);
           $scope.contributorsNextUrl = helper.getNextUrl(res);
           $scope.contributors = res.data;
+
+          var isFirst = $scope.contributorsPreviousUrl === helper.getFirstUrl(res);
+          $scope.contributorsPreviousLabel = isFirst ? 'First' : 'Previous';
+
+          var isLast = $scope.contributorsNextUrl === helper.getLastUrl(res);
+          $scope.contributorsNextLabel = isLast ? 'Last' : 'Next';
+
         })
 
         .finally(function () {
@@ -115,9 +118,8 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     $scope.commits = [];
     $scope.isFetchingCommits = false;
-    var COMMITS_LIMIT = 100;
 
-    function fetchCommitsUntil100 (commitsUrl) {
+    function fetchCommits (commitsUrl, commits_limit) {
 
       return $http.get(commitsUrl)
         .then(function (response) {
@@ -130,9 +132,9 @@ angular.module('githubClient', ['ui.bootstrap'])
 
           $scope.commits = $scope.commits.concat(commits);
 
-          var hasReachedLimit = _($scope.commits).size() >= COMMITS_LIMIT;
+          var hasReachedLimit = _($scope.commits).size() >= commits_limit;
           if (hasReachedLimit) {
-            $scope.commits = _.first($scope.commits, 100);
+            $scope.commits = _.first($scope.commits, commits_limit);
             return;
           }
 
@@ -154,12 +156,12 @@ angular.module('githubClient', ['ui.bootstrap'])
           var fmtUrl = _(nextLink.split(';')).first();
           var urlNextPage = fmtUrl.replace(/<|>/g, '');
 
-          return fetchCommitsUntil100(urlNextPage);
+          return fetchCommits(urlNextPage, commits_limit);
 
         });
     }
 
-    function fetchLatest100Commits (selectedRepo) {
+    function fetchLatestCommits (selectedRepo, nbCommits) {
       $scope.isFetchingCommits = true;
       $scope.commits = [];
 
@@ -167,7 +169,7 @@ angular.module('githubClient', ['ui.bootstrap'])
       //  GET /repos/:owner/:repo/commits
       var commitsUrl = selectedRepo.commits_url.replace('{/sha}', '');
 
-      return fetchCommitsUntil100(commitsUrl)
+      return fetchCommits(commitsUrl, nbCommits)
         .finally(function () {
           $scope.isFetchingCommits = false;
         })
@@ -180,11 +182,8 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     $scope.onSelectRepo = function (selectedRepo) {
 
-      //  GET /repos/:owner/:repo/contributors
-      var contributorsUrl = selectedRepo.contributors_url;
-
-      $scope.goToContributors(contributorsUrl);
-//      fetchLatest100Commits(selectedRepo);
+      $scope.goToContributors(selectedRepo.contributors_url); //  GET /repos/:owner/:repo/contributors
+      fetchLatestCommits(selectedRepo, 100);
 
     };
 

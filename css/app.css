@@ -117,3 +117,63 @@ body {
   margin: 0 auto
 }
 
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+.notifications {
+  position: absolute;
+  z-index: 101;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #FFF;
+  text-align: center;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-box-shadow: 0 0 5px black;
+  -moz-box-shadow:    0 0 5px black;
+  box-shadow:         0 0 5px black;
+}
+
+.repeated-item.ng-enter, .repeated-item.ng-move {
+  -webkit-transition:0.5s linear all;
+  -moz-transition:0.5s linear all;
+  -o-transition:0.5s linear all;
+  transition:0.5s linear all;
+  opacity:0;
+}
+
+.repeated-item.ng-enter.ng-enter-active,
+.repeated-item.ng-move.ng-move-active {
+  opacity:1;
+}
+
+.repeated-item.ng-leave {
+  -webkit-animation:0.5s my_animation;
+  -moz-animation:0.5s my_animation;
+  -o-animation:0.5s my_animation;
+  animation:0.5s my_animation;
+}
+
+@keyframes my_animation {
+  from { opacity:1; }
+  to { opacity:0; }
+}
+
+@-webkit-keyframes my_animation {
+  from { opacity:1; }
+  to { opacity:0; }
+}
+
+@-moz-keyframes my_animation {
+  from { opacity:1; }
+  to { opacity:0; }
+}
+
+@-o-keyframes my_animation {
+  from { opacity:1; }
+  to { opacity:0; }
+}
+
+

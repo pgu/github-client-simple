@@ -4,26 +4,50 @@ angular.module('githubClient', ['ui.bootstrap'])
 
   .config(function ($httpProvider) {
 
-    // TODO X-RateLimit-Limit:60
-//    X-RateLimit-Remaining:55
-//    X-RateLimit-Reset:1400704560
+    function isCallToGitHub (config) {
+      return config.url.indexOf('https://api.github.com') === 0;
+    }
 
     $httpProvider.interceptors.push(
-      function () {
+      function (errorHelper) {
         return {
           request: function (config) {
-            var isCallToGitHub = config.url.indexOf('https://api.github.com') === 0;
 
-            if (isCallToGitHub) {
+            if (isCallToGitHub(config)) {
               config.headers.accept = 'application/vnd.github.v3+json';
             }
 
             return config;
+          },
+          responseError: function (rejection) {
+
+            if (isCallToGitHub(rejection.config)) {
+
+              var headers = rejection.headers();
+              var reset = headers['X-RateLimit-Reset'] || '';
+
+              errorHelper.apiCallErrors.push({
+                url: rejection.config.url,
+                message: rejection.data.message,
+                documentation_url: rejection.data.documentation_url,
+                limit: headers['X-RateLimit-Limit'] || '',
+                remaining: headers['X-RateLimit-Remaining'] || '',
+                reset: reset ? moment(reset).format('llll') : ''
+              });
+            }
+
+            return rejection;
           }
         };
       }
     );
 
+  })
+
+  .factory('errorHelper', function () {
+    return {
+      apiCallErrors: []
+    };
   })
 
   .factory('helper', function () {
@@ -154,8 +178,9 @@ angular.module('githubClient', ['ui.bootstrap'])
             xAxis: {
               type: 'datetime',
               dateTimeLabelFormats: {
-                day: '%e. %b',
-                month: '%b \'%y',
+                day: '%e %b %y',
+                week: '%e %b %y',
+                month: '%b %y',
                 year: '%Y'
               },
               title: {
@@ -170,7 +195,7 @@ angular.module('githubClient', ['ui.bootstrap'])
             },
             tooltip: {
               headerFormat: '<b>{series.name}</b><br>',
-              pointFormat: '{point.x:%e. %b}: {point.y} commits'
+              pointFormat: '{point.x:%e %b %Y}: {point.y} commits'
             },
 
             series: [
@@ -186,7 +211,9 @@ angular.module('githubClient', ['ui.bootstrap'])
     };
   })
 
-  .controller('MainCtrl', function ($scope, $http, $q, helper, $timeout) {
+  .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper) {
+
+    $scope.apiCallErrors = errorHelper.apiCallErrors;
 
     $scope.searchProject = function (query) {
 
@@ -200,18 +227,21 @@ angular.module('githubClient', ['ui.bootstrap'])
 
       return $http.get(url, { params: params })
         .then(function (res) {
-          var response = res.data;
-          return response.items;
+          return res.data.items;
         });
     };
 
     $scope.goToContributors = function (url) {
 
-      $scope.isFetchingContributors = true;
       $scope.contributors = [];
-
       $scope.contributorsPreviousLabel = '';
       $scope.contributorsNextLabel = '';
+
+      if (!url) {
+        return;
+      }
+
+      $scope.isFetchingContributors = true;
 
       return $http.get(url)
 
@@ -235,115 +265,156 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     };
 
-    $scope.commits = [];
-    $scope.isFetchingCommits = false;
+    function fetchCommits (url, limit, accu) {
 
-    function fetchCommits (commitsUrl, commits_limit) {
-
-      return $http.get(commitsUrl)
+      return $http.get(url)
         .then(function (response) {
 
           var commits = response.data;
 
           if (_(commits).isEmpty()) {
-            return;
+            return accu;
           }
 
-          $scope.commits = $scope.commits.concat(commits);
-
-          var hasReachedLimit = _($scope.commits).size() >= commits_limit;
-          if (hasReachedLimit) {
-            $scope.commits = _.first($scope.commits, commits_limit);
-            return;
-          }
-
-          var headers = response.headers();
-
-          //  Header Link: <https://api.github.com/repositories/4991291/commits?page=2>; rel="next"
-          var noNextPage = !_.has(headers, 'link') ||
-            headers.link.indexOf('rel="next"') === -1;
-
-          if (noNextPage) {
-            return;
-          }
-
-          var links = headers.link.split(', ');
-          var nextLink = _.find(links, function (link) {
-            return link.indexOf('rel="next"') !== -1;
+          _(commits).some(function (commit) {
+            accu.push(commit);
+            return _(accu).size() === limit;
           });
 
-          var fmtUrl = _(nextLink.split(';')).first();
-          var urlNextPage = fmtUrl.replace(/<|>/g, '');
+          if (_(accu).size() === limit) {
+            return accu;
+          }
 
-          return fetchCommits(urlNextPage, commits_limit);
+          var urlNextPage = helper.getNextUrl(response);
+          if (!urlNextPage) {
+            return accu;
+          }
 
+          return fetchCommits(urlNextPage, limit, accu);
         });
     }
 
-    function fetchLatestCommits (selectedRepo, nbCommits) {
+    function fetchLatestCommits (selectedRepo, limit) {
+
+      if (!selectedRepo.commits_url) {
+        return $q.when([]);
+      }
+
       $scope.isFetchingCommits = true;
-      $scope.commits = [];
 
       //  https://developer.github.com/v3/repos/commits/
       //  GET /repos/:owner/:repo/commits
       var commitsUrl = selectedRepo.commits_url.replace('{/sha}', '');
 
-      return fetchCommits(commitsUrl, nbCommits)
+      return fetchCommits(commitsUrl, limit, [] /* accu */)
         .finally(function () {
           $scope.isFetchingCommits = false;
         })
         ;
     };
 
-    $scope.noop = function (selected) {
-      console.info('> ', selected);
+    function updateContributorsChart (commits) {
+
+      $scope.contributorsChartData = _(commits)
+
+        .groupBy(function (commit) {
+          return commit.commit.author.name; // { john: [commits], jane: [commits] }
+        })
+
+        .mapValues(function (commits) { // { john: 42, jane: 21 }
+          return _(commits).size();
+        })
+
+        .pairs() // [ [john, 42], [jane, 21] ]
+        .sortBy('1') // [ [jane, 21], [john, 42] ]
+        .valueOf()
+      ;
     }
 
-    $scope.nbCommits = 100;
+    function updateCommitsChart (commits) {
 
-    $scope.onSelectRepo = function (selectedRepo) {
+      $scope.commitsChartData = _(commits)
 
-      $scope.goToContributors(selectedRepo.contributors_url); //  GET /repos/:owner/:repo/contributors
+        .groupBy(function (commit) {
+          var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
+          var commitDate = commitDateTime.replace(/T.+$/gi, 'T00:00:00Z'); // 2014-05-19T00:00:00Z
+          return moment(commitDate).valueOf(); // { 1400457600000: [commits] }
+        })
 
-      $scope.contributorsChartData = [];
-      $scope.commitsChartData = [];
+        .map(function (commits, key) {
+          return [_.parseInt(key), _(commits).size()];
+        }) // [ [1400457600000, 42] ]
 
-      fetchLatestCommits(selectedRepo, $scope.nbCommits)
-        .then(function () {
+        .sortBy('0')
+        .valueOf()
+      ;
 
-          $scope.contributorsChartData = _($scope.commits)
+    }
 
-            .groupBy(function (commit) {
-              return commit.commit.author.name; // { john: [commits], jane: [commits] }
-            })
+    $scope.COMMITS_LIMIT = 100;
 
-            .mapValues(function (commits) { // { john: 42, jane: 21 }
-              return _(commits).size();
-            })
+    function fetchData (selectedRepo) {
 
-            .pairs() // [ [john, 42], [jane, 21] ]
-            .sortBy('1') // [ [jane, 21], [john, 42] ]
-            .valueOf()
-          ;
+      var repo = selectedRepo || {};
 
-          $scope.commitsChartData = _($scope.commits)
+      $scope.goToContributors(repo.contributors_url); //  GET /repos/:owner/:repo/contributors
 
-            .groupBy(function (commit) {
-              var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
-              var commitDate = commitDateTime.replace(/T.+$/gi, 'T00:00:00Z'); // 2014-05-19T00:00:00Z
-              return moment(commitDate).valueOf(); // { 1400457600000: [commits] }
-            })
+      fetchLatestCommits(repo, $scope.COMMITS_LIMIT)
+        .then(function (commits) {
 
-            .map(function (commits, key) {
-              return [_.parseInt(key), _(commits).size()];
-            }) // [ [1400457600000, 42] ]
-
-            .sortBy('0')
-            .valueOf()
-          ;
+          updateContributorsChart(commits);
+          updateCommitsChart(commits);
 
         });
 
+    };
+
+    function fetchRepo (repoFullName) {
+
+      if (_.isEmpty(repoFullName)) {
+        return $q.when(null);
+      }
+
+      var repoHasBeenSelected = $scope.selectedRepo && $scope.selectedRepo.full_name === repoFullName;
+      if (repoHasBeenSelected) {
+        return $q.when($scope.selectedRepo);
+      }
+
+      return $http.get('https://api.github.com/repos' + repoFullName)
+        .then(function (res) {
+          return res.data;
+        })
+        .catch(function () {
+          return null;
+        })
+        ;
+    }
+
+    function updatePageForRepo (repoFullName) {
+
+      errorHelper.apiCallErrors = [];
+
+      fetchRepo(repoFullName)
+        .then(function (repo) {
+          $scope.selectedRepo = repo;
+          return repo;
+        })
+        .then(fetchData)
+      ;
+
+    }
+
+    $scope.$watch(function () {
+      return $location.path();
+    }, function (newValue) {
+      updatePageForRepo(newValue);
+    });
+
+    updatePageForRepo($location.path());
+
+    $scope.onSelectRepo = function (selectedRepo) {
+      $scope.selectedRepo = selectedRepo;
+      $location.path(selectedRepo.full_name);
     };
 
   });

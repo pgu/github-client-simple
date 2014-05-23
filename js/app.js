@@ -125,7 +125,68 @@ angular.module('githubClient', ['ui.bootstrap'])
     }
   })
 
-  .controller('MainCtrl', function ($scope, $http, $q, helper) {
+  .directive('commitsChart', function () {
+    return {
+      restrict: 'E',
+      template: '<div></div>',
+      replace: true,
+      scope: {
+        data: '='
+      },
+      link: function ($scope, element, attrs) {
+
+        var id = attrs.id;
+
+        $scope.$watch('data', function () {
+
+          if (_.isEmpty($scope.data)) {
+            $('#' + id).empty();
+            return;
+          }
+
+          $('#' + id).highcharts({
+            chart: {
+              type: 'spline'
+            },
+            title: {
+              text: 'Commits through time'
+            },
+            xAxis: {
+              type: 'datetime',
+              dateTimeLabelFormats: {
+                day: '%e. %b',
+                month: '%b \'%y',
+                year: '%Y'
+              },
+              title: {
+                text: 'Date'
+              }
+            },
+            yAxis: {
+              title: {
+                text: 'Number of commits'
+              },
+              min: 0
+            },
+            tooltip: {
+              headerFormat: '<b>{series.name}</b><br>',
+              pointFormat: '{point.x:%e. %b}: {point.y} commits'
+            },
+
+            series: [
+              {
+                name: '# of commits',
+                data: $scope.data
+              }
+            ]
+          });
+
+        });
+      }
+    };
+  })
+
+  .controller('MainCtrl', function ($scope, $http, $q, helper, $timeout) {
 
     $scope.searchProject = function (query) {
 
@@ -245,19 +306,39 @@ angular.module('githubClient', ['ui.bootstrap'])
       $scope.goToContributors(selectedRepo.contributors_url); //  GET /repos/:owner/:repo/contributors
 
       $scope.contributorsChartData = [];
+      $scope.commitsChartData = [];
 
       fetchLatestCommits(selectedRepo, $scope.nbCommits)
         .then(function () {
 
           $scope.contributorsChartData = _($scope.commits)
+
             .groupBy(function (commit) {
               return commit.commit.author.name; // { john: [commits], jane: [commits] }
             })
+
             .mapValues(function (commits) { // { john: 42, jane: 21 }
               return _(commits).size();
             })
+
             .pairs() // [ [john, 42], [jane, 21] ]
             .sortBy('1') // [ [jane, 21], [john, 42] ]
+            .valueOf()
+          ;
+
+          $scope.commitsChartData = _($scope.commits)
+
+            .groupBy(function (commit) {
+              var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
+              var commitDate = commitDateTime.replace(/T.+$/gi, 'T00:00:00Z'); // 2014-05-19T00:00:00Z
+              return moment(commitDate).valueOf(); // { 1400457600000: [commits] }
+            })
+
+            .map(function (commits, key) {
+              return [_.parseInt(key), _(commits).size()];
+            }) // [ [1400457600000, 42] ]
+
+            .sortBy('0')
             .valueOf()
           ;
 

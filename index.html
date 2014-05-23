@@ -120,13 +120,27 @@
 
       <div class="panel panel-default">
         <div class="panel-heading">
-          <i class="glyphicon glyphicon-fire"></i>
+          <i class="fa fa-fw fa-bar-chart-o"></i>
           Contributors for the latest {{ nbCommits }} commits
         </div>
         <div class="panel-body">
           <contributors-chart id="contributors100"
                               class="contributors-chart"
                               data="contributorsChartData"></contributors-chart>
+        </div>
+      </div>
+
+      <p></p>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <i class="fa fa-fw fa-clock-o"></i>
+          Timeline for the latest {{ nbCommits }} commits
+        </div>
+        <div class="panel-body">
+          <commits-chart id="commits100"
+                         class="commits-chart"
+                         data="commitsChartData"></commits-chart>
         </div>
       </div>
 
@@ -145,6 +159,7 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 <script async defer src="//cdnjs.cloudflare.com/ajax/libs/highcharts/4.0.1/highcharts.js"></script>
+<script async defer src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment-with-langs.min.js"></script>
 
 <script src="js/app.js"></script>
 </body>

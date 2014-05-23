@@ -26,9 +26,9 @@
   your browser</a> to improve your experience.</p>
 <![endif]-->
 
-<div class="notifications" ng-show="apiCallErrors.length">
-  <button type="button" class="close" aria-hidden="true" ng-click="apiCallErrors = []">&times;</button>
-  <p class="bg-warning repeated-item" ng-repeat="err in apiCallErrors">
+<div class="notifications" ng-show="errorHelper.apiCallErrors.length">
+  <button type="button" class="close" aria-hidden="true" ng-click="errorHelper.apiCallErrors = []">&times;</button>
+  <p class="bg-warning repeated-item" ng-repeat="err in errorHelper.apiCallErrors">
     <strong>{{ err.url }}</strong><br/>
     <span ng-if="err.limit">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{ err.reset }}</strong><br/></span>
     <span ng-if="err.message">{{ err.message }} <a ng-href="{{ err.documentation_url }}" target="_blank" class="alert-link">(see Docs)</a></span>
@@ -64,6 +64,7 @@
           <div class="panel-heading">
             <i class="fa fa-fw fa-users"></i>
             Contributors
+            <i class="fa fa-fw fa-refresh fa-spin" ng-show="isFetchingContributors"></i>
           </div>
           <div class="panel-body">
             <div ng-if="contributors.length">
@@ -116,7 +117,7 @@
                 </div>
               </div>
 
-              <ul class="pager">
+              <ul class="pager" style="margin: 0">
 
                 <li ng-class="{ 'disabled': !contributorsPreviousUrl }"
                     ng-click="goToContributors(contributorsPreviousUrl)"

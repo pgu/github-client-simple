@@ -24,16 +24,21 @@ angular.module('githubClient', ['ui.bootstrap'])
             if (isCallToGitHub(rejection.config)) {
 
               var headers = rejection.headers();
-              var reset = headers['X-RateLimit-Reset'] || '';
+              var reset = headers['x-ratelimit-reset'] || '';
 
-              errorHelper.apiCallErrors.push({
+              var newError = {
                 url: rejection.config.url,
                 message: rejection.data.message,
                 documentation_url: rejection.data.documentation_url,
-                limit: headers['X-RateLimit-Limit'] || '',
-                remaining: headers['X-RateLimit-Remaining'] || '',
-                reset: reset ? moment(reset).format('llll') : ''
-              });
+                limit: headers['x-ratelimit-limit'] || '',
+                remaining: headers['x-ratelimit-remaining'] || '',
+                reset: reset ? moment.unix(reset).format('llll') : ''
+              };
+
+              // avoid duplicates
+              var url2error = _.indexBy(errorHelper.apiCallErrors, 'url');
+              url2error[newError.url] = newError;
+              errorHelper.apiCallErrors = _.values(url2error);
             }
 
             return rejection;
@@ -213,7 +218,7 @@ angular.module('githubClient', ['ui.bootstrap'])
 
   .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper) {
 
-    $scope.apiCallErrors = errorHelper.apiCallErrors;
+    $scope.errorHelper = errorHelper;
 
     $scope.searchProject = function (query) {
 
@@ -233,11 +238,11 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     $scope.goToContributors = function (url) {
 
-      $scope.contributors = [];
-      $scope.contributorsPreviousLabel = '';
-      $scope.contributorsNextLabel = '';
-
       if (!url) {
+        $scope.contributors = [];
+        $scope.contributorsPreviousLabel = '';
+        $scope.contributorsNextLabel = '';
+
         return;
       }
 
@@ -256,6 +261,12 @@ angular.module('githubClient', ['ui.bootstrap'])
           var isLast = $scope.contributorsNextUrl === helper.getLastUrl(res);
           $scope.contributorsNextLabel = isLast ? 'Last' : 'Next';
 
+        })
+
+        .catch(function() {
+          $scope.contributors = [];
+          $scope.contributorsPreviousLabel = '';
+          $scope.contributorsNextLabel = '';
         })
 
         .finally(function () {

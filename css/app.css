@@ -177,3 +177,11 @@ body {
 }
 
 
+.contributor-avatar {
+  width: 22px;
+  height: 22px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  padding: 1px;
+}

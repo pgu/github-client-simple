@@ -30,8 +30,10 @@
   <button type="button" class="close" aria-hidden="true" ng-click="errorHelper.apiCallErrors = []">&times;</button>
   <p class="bg-warning repeated-item" ng-repeat="err in errorHelper.apiCallErrors">
     <strong>{{ err.url }}</strong><br/>
-    <span ng-if="err.limit">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{ err.reset }}</strong><br/></span>
-    <span ng-if="err.message">{{ err.message }} <a ng-href="{{ err.documentation_url }}" target="_blank" class="alert-link">(see Docs)</a></span>
+    <span ng-if="err.limit">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{
+      err.reset }}</strong><br/></span>
+    <span ng-if="err.message">{{ err.message }} <a ng-href="{{ err.documentation_url }}" target="_blank"
+                                                   class="alert-link">(see Docs)</a></span>
   </p>
 </div>
 
@@ -71,49 +73,19 @@
 
               <div class="row">
                 <div class="col-xs-4">
-                  <div class="list-group">
-                    <a ng-repeat="contributor in contributors"
-                       ng-if="$index < 10"
-                       class="list-group-item"
-                      >
-                      <span class="badge pull-right"
-                            data-toggle="tooltip"
-                            data-placement="top"
-                            title="Contributions"
-                        >{{ contributor.contributions }}</span>
-                      {{ contributor.login }}
-                    </a>
-                  </div>
+                  <contributors-list contributors="contributors"
+                                     start="0"
+                                     stop="10"></contributors-list>
                 </div>
                 <div class="col-xs-4">
-                  <div class="list-group">
-                    <a ng-repeat="contributor in contributors"
-                       ng-if="9 < $index && $index < 20"
-                       class="list-group-item"
-                      >
-                      <span class="badge pull-right"
-                            data-toggle="tooltip"
-                            data-placement="top"
-                            title="Contributions"
-                        >{{ contributor.contributions }}</span>
-                      {{ contributor.login }}
-                    </a>
-                  </div>
+                  <contributors-list contributors="contributors"
+                                     start="10"
+                                     stop="20"></contributors-list>
                 </div>
                 <div class="col-xs-4">
-                  <div class="list-group">
-                    <a ng-repeat="contributor in contributors"
-                       ng-if="19 < $index"
-                       class="list-group-item"
-                      >
-                      <span class="badge pull-right"
-                            data-toggle="tooltip"
-                            data-placement="top"
-                            title="Contributions"
-                        >{{ contributor.contributions }}</span>
-                      {{ contributor.login }}
-                    </a>
-                  </div>
+                  <contributors-list contributors="contributors"
+                                     start="20"
+                                     stop="contributors.length"></contributors-list>
                 </div>
               </div>
 
@@ -192,5 +164,6 @@
 <script async defer src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment-with-langs.min.js"></script>
 
 <script src="js/app.js"></script>
+
 </body>
 </html>

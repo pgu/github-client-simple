@@ -96,6 +96,30 @@ angular.module('githubClient', ['ui.bootstrap'])
     };
   })
 
+  .directive('contributorsList', function ($timeout) {
+    return {
+      restrict: 'E',
+      templateUrl: 'directives/contributorsList.html',
+      replace: true,
+      scope: {
+        contributors: '=',
+        start: '=',
+        stop: '='
+      },
+      link: function ($scope) {
+
+        $scope.$watch('contributors', function () {
+          $timeout(function () {
+            if ($('[data-toggle=tooltip]').length) {
+              $('[data-toggle=tooltip]').tooltip();
+            }
+          });
+        })
+
+      }
+    }
+  })
+
   .directive('contributorsChart', function () {
     return {
       restrict: 'E',
@@ -263,7 +287,7 @@ angular.module('githubClient', ['ui.bootstrap'])
 
         })
 
-        .catch(function() {
+        .catch(function () {
           $scope.contributors = [];
           $scope.contributorsPreviousLabel = '';
           $scope.contributorsNextLabel = '';
@@ -370,13 +394,13 @@ angular.module('githubClient', ['ui.bootstrap'])
 
       $scope.goToContributors(repo.contributors_url); //  GET /repos/:owner/:repo/contributors
 
-      fetchLatestCommits(repo, $scope.COMMITS_LIMIT)
-        .then(function (commits) {
-
-          updateContributorsChart(commits);
-          updateCommitsChart(commits);
-
-        });
+//      fetchLatestCommits(repo, $scope.COMMITS_LIMIT)
+//        .then(function (commits) {
+//
+//          updateContributorsChart(commits);
+//          updateCommitsChart(commits);
+//
+//        });
 
     };
 

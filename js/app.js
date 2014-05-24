@@ -240,7 +240,84 @@ angular.module('githubClient', ['ui.bootstrap'])
     };
   })
 
-  .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper) {
+  .directive('contributorsHeatmap', function () {
+    return {
+      restrict: 'E',
+      template: '<div></div>',
+      replace: true,
+      scope: {
+        data: '=',
+        categories: '='
+      },
+      link: function ($scope, element, attrs) {
+
+        var id = attrs.id;
+
+        $scope.$watch('data', function () {
+
+          if (_.isEmpty($scope.data)) {
+            $('#' + id).empty();
+            return;
+          }
+
+          $('#' + id).highcharts({
+            chart: {
+              type: 'heatmap',
+              marginTop: 40,
+              marginBottom: 40
+            },
+            title: {
+              text: 'Commits per contributors per weekday'
+            },
+            xAxis: {
+              categories: $scope.categories.x
+            },
+            yAxis: {
+              categories: $scope.categories.y,
+              title: null
+            },
+            colorAxis: {
+              min: 0,
+              minColor: '#FFFFFF',
+              maxColor: Highcharts.getOptions().colors[0]
+            },
+            legend: {
+              align: 'right',
+              layout: 'vertical',
+              margin: 0,
+              verticalAlign: 'top',
+              y: 25,
+              symbolHeight: 320
+            },
+            tooltip: {
+              formatter: function () {
+                return '<b>' + this.series.xAxis.categories[this.point.x] + '</b> committed <br><b>' +
+                  this.point.value + '</b> commits on <br><b>' + this.series.yAxis.categories[this.point.y] + '</b>';
+              }
+            },
+
+            series: [{
+              name: 'Commits per contributors',
+              borderWidth: 1,
+              data: $scope.data,
+              dataLabels: {
+                enabled: true,
+                color: 'black',
+                style: {
+                  textShadow: 'none',
+                  HcTextStroke: null
+                }
+              }
+            }]
+
+          });
+
+        });
+      }
+    };
+  })
+
+  .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper, $timeout) {
 
     $scope.errorHelper = errorHelper;
 
@@ -386,6 +463,55 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     }
 
+    function updateContributorsHeatmap (commits) {
+
+      var WEEK_DAYS = ['Sunday', 'Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday'];
+
+      var author2commits = _.groupBy(commits, function(commit) {
+          return commit.commit.author.name; // { john: [commits], jane: [commits] }
+      });
+
+      var topTenAuthors = _(author2commits)
+        .map(function (commits, author) {
+          return { name: author, commitsNb : _(commits).size() };
+        })
+        .sortBy('commitsNb')
+        .last(10)
+        .reverse()
+        .pluck('name')
+        .valueOf()
+      ;
+
+      var data = _(topTenAuthors).reduce(function(accu, author, authorIdx) {
+
+        var nbCommitsByWeekday = _(author2commits[author])
+
+          .groupBy(function(commit) {
+            var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
+            return moment(commitDateTime).weekday();
+          })
+          .mapValues(function (commits) {
+            return _(commits).size();
+          })
+            .valueOf()
+          ;
+
+        _(WEEK_DAYS).each(function(day, dayIdx) {
+          var momentIdx = _.indexOf(moment.weekdays(), day);
+          accu.push([authorIdx, dayIdx, nbCommitsByWeekday[momentIdx] || 0]);
+        });
+
+        return accu;
+      }, []);
+
+      $scope.contributorsHeatCategories = {
+        x: topTenAuthors,
+        y: WEEK_DAYS
+      };
+
+      $scope.contributorsHeatData = data;
+    }
+
     $scope.COMMITS_LIMIT = 100;
 
     function fetchData (selectedRepo) {
@@ -394,13 +520,14 @@ angular.module('githubClient', ['ui.bootstrap'])
 
       $scope.goToContributors(repo.contributors_url); //  GET /repos/:owner/:repo/contributors
 
-//      fetchLatestCommits(repo, $scope.COMMITS_LIMIT)
-//        .then(function (commits) {
-//
-//          updateContributorsChart(commits);
-//          updateCommitsChart(commits);
-//
-//        });
+      fetchLatestCommits(repo, $scope.COMMITS_LIMIT)
+        .then(function (commits) {
+
+          updateContributorsChart(commits);
+          updateCommitsChart(commits);
+          updateContributorsHeatmap(commits);
+
+        });
 
     };
 
@@ -439,13 +566,11 @@ angular.module('githubClient', ['ui.bootstrap'])
 
     }
 
-    $scope.$watch(function () {
+    $scope.$watch(function () { // init the page
       return $location.path();
     }, function (newValue) {
       updatePageForRepo(newValue);
     });
-
-    updatePageForRepo($location.path());
 
     $scope.onSelectRepo = function (selectedRepo) {
       $scope.selectedRepo = selectedRepo;

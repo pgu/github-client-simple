@@ -34,8 +34,25 @@
     <span ng-if="err.limit" class="animate-if">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{
       err.reset }}</strong><br/></span>
     <span ng-if="err.message" class="text-warning animate-if">{{ err.message }} <a ng-href="{{ err.documentation_url }}"
-                                                                        target="_blank"
-                                                                        class="alert-link">(see Docs)</a></span>
+                                                                                   target="_blank"
+                                                                                   class="alert-link">(see
+      Docs)</a></span>
+
+    <br>
+    <br>
+    <span ng-if="err.remaining === '0'"
+          class="animate-if">
+      <strong>Heads up!</strong>
+      You can use the
+      <a href="https://pgu.firebaseapp.com/"
+         target="_blank"
+         class="alert-link">oauth2 version of the website</a>
+      to unlock the rate limit
+      <a href="https://pgu.firebaseapp.com/"
+         target="_blank"
+         class="alert-link"><i class="fa fa-external-link"></i></a>
+    </span>
+
   </p>
 </div>
 

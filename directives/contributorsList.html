@@ -2,6 +2,7 @@
   <a ng-repeat="contributor in contributors"
      ng-if="start <= $index && $index < stop"
      class="list-group-item repeated-item animate-if"
+     style="min-width: 175px;"
      target="_blank"
      ng-href="{{ contributor.html_url }}"
     >

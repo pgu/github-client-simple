@@ -9,7 +9,7 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
     }
 
     $httpProvider.interceptors.push(
-      function (errorHelper) {
+      function (errorHelper, $q) {
         return {
           request: function (config) {
 
@@ -41,7 +41,7 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
               errorHelper.apiCallErrors = _.values(url2error);
             }
 
-            return rejection;
+            return $q.reject(rejection);
           }
         };
       }

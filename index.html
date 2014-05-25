@@ -31,9 +31,9 @@
   <button type="button" class="close" aria-hidden="true" ng-click="errorHelper.apiCallErrors = []">&times;</button>
   <p class="bg-warning repeated-item" ng-repeat="err in errorHelper.apiCallErrors">
     <strong>{{ err.url }}</strong><br/>
-    <span ng-if="err.limit">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{
+    <span ng-if="err.limit" class="animate-if">Rate limit: <strong>{{ err.remaining }} / {{ err.limit }}</strong>. Reset at <strong>{{
       err.reset }}</strong><br/></span>
-    <span ng-if="err.message" class="text-warning">{{ err.message }} <a ng-href="{{ err.documentation_url }}"
+    <span ng-if="err.message" class="text-warning animate-if">{{ err.message }} <a ng-href="{{ err.documentation_url }}"
                                                                         target="_blank"
                                                                         class="alert-link">(see Docs)</a></span>
   </p>
@@ -61,7 +61,7 @@
 
       <p></p>
 
-      <div ng-if="selectedRepo" ng-cloak>
+      <div ng-if="selectedRepo" ng-cloak class="animate-if">
         <h1 class="page-header">{{ selectedRepo.full_name }}</h1>
 
         <div class="panel panel-default">
@@ -71,7 +71,7 @@
             <i class="fa fa-fw fa-refresh fa-spin" ng-show="isFetchingContributors"></i>
           </div>
           <div class="panel-body">
-            <div ng-if="contributors.length">
+            <div ng-if="contributors.length" class="animate-if">
 
               <div class="row">
                 <div class="col-xs-4">
@@ -176,6 +176,7 @@
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.16/angular-animate.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment-with-langs.min.js"></script>
 <script src="http://code.highcharts.com/highcharts.js"></script>

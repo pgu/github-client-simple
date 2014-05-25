@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('githubClient', ['ui.bootstrap'])
+angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
 
   .config(function ($httpProvider) {
 

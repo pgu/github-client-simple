@@ -69,7 +69,7 @@
              typeahead="repo as repo.full_name for repo in searchProject($viewValue)"
              typeahead-loading="searchingRepos"
              typeahead-on-select="onSelectRepo(inputSelectedRepo)"
-             typeahead-wait-ms="500"
+             typeahead-wait-ms="300"
              typeahead-min-length="3"
              ng-disabled="isFetchingCommits || isFetchingContributors"
              class="form-control">
@@ -79,7 +79,13 @@
       <p></p>
 
       <div ng-if="selectedRepo" ng-cloak class="animate-if">
-        <h1 class="page-header">{{ selectedRepo.full_name }}</h1>
+        <h1 class="page-header">
+          {{ selectedRepo.full_name }}
+          <a ng-href="{{ selectedRepo.html_url }}"
+             target="_blank"
+             class="small"
+            ><i class="fa fa-fw fa-external-link"></i></a>
+        </h1>
 
         <div class="panel panel-default">
           <div class="panel-heading">

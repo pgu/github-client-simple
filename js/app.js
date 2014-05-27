@@ -482,7 +482,7 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
         .valueOf()
       ;
 
-      var data = _(topTenAuthors).reduce(function(accu, author, authorIdx) {
+      var data = _(topTenAuthors).reduce(function(allAuthorDayNbCommits, author, authorIdx) {
 
         var nbCommitsByWeekday = _(author2commits[author])
 
@@ -496,12 +496,12 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
             .valueOf()
           ;
 
-        _(WEEK_DAYS).each(function(day, dayIdx) {
+        var authorDayNbCommits = _.map(WEEK_DAYS, function(day, dayIdx) {
           var momentIdx = _.indexOf(moment.weekdays(), day);
-          accu.push([authorIdx, dayIdx, nbCommitsByWeekday[momentIdx] || 0]);
+          return [authorIdx, dayIdx, nbCommitsByWeekday[momentIdx] || 0];
         });
 
-        return accu;
+        return allAuthorDayNbCommits.concat(authorDayNbCommits);
       }, []);
 
       $scope.contributorsHeatCategories = {

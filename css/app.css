@@ -2,9 +2,15 @@
  * Base structure
  */
 
-/* Move down content because we have a fixed navbar that is 50px tall */
 body {
   padding-top: 50px;
+}
+
+#hsTop {
+  width: 1px;
+  position: absolute;
+  top: 0;
+  left: 20%;
 }
 
 /*
@@ -208,4 +214,8 @@ body {
 .animate-if.ng-leave,
 .animate-if.ng-enter.ng-enter-active {
   opacity:1;
+}
+
+.hopscotch-bubble * {
+  box-sizing: content-box;
 }

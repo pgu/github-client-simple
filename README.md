@@ -20,6 +20,7 @@ Built with:
 - [Moment.js](http://momentjs.com/)
 - [Lo-dash](http://lodash.com/)
 - [Highcharts](http://www.highcharts.com/)
+- [Hopscotch](http://linkedin.github.io/hopscotch/)
 
 :shipit: Deploy it easily on localhost with [http-server](https://www.npmjs.org/package/http-server)
 

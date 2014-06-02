@@ -120,6 +120,77 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
     }
   })
 
+  .directive('tour', function () {
+    return {
+      restrict: 'E',
+      template: '<button type="button" class="btn btn-info pull-right" ng-click="startTour()">Take a tour</button>',
+      replace: true,
+      scope: {
+        isOn: '=',
+        project: '='
+      },
+      controller: function ($scope, $window) {
+
+        function getTour () {
+          return {
+            id: "gh-tour",
+            steps: [
+              {
+                title: "Search a repository",
+                content: "Type a repository name and select a repository from the suggestions list.",
+                target: "hsSearch",
+                placement: "top",
+                showNextButton: !_.isEmpty($scope.project)
+              },
+              {
+                title: "Contributors",
+                content: "You can browse all the project's contributors. Click on a contributor to open its GitHub profile.",
+                target: "hsContributors",
+                placement: "bottom"
+              },
+              {
+                title: "Contributions",
+                content: "Overview of the contributors impact over the latest 100 commits.",
+                target: "hsContributions",
+                placement: "bottom"
+              },
+              {
+                title: "Timeline",
+                content: "Overview of the commits activity through time.",
+                target: "hsTimeline",
+                placement: "bottom"
+              },
+              {
+                title: "Heatmap",
+                content: "Activity of the top 10 contributors over the weekdays.",
+                target: "hsHeatmap",
+                placement: "bottom"
+              },
+              {
+                title: "Bookmark",
+                content: "At last, you can bookmark the repository's page.",
+                target: "hsTop",
+                placement: "bottom"
+              }
+            ],
+            onStart: function () {
+              $scope.isOn = true;
+            },
+            onEnd: function () {
+              $scope.isOn = false;
+            },
+            showCloseButton: false
+          };
+        }
+
+        $scope.startTour = function () {
+          $window.hopscotch.startTour(getTour());
+        };
+
+      }
+    }
+  })
+
   .directive('contributorsChart', function () {
     return {
       restrict: 'E',
@@ -296,19 +367,21 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
               }
             },
 
-            series: [{
-              name: 'Commits per contributors',
-              borderWidth: 1,
-              data: $scope.data,
-              dataLabels: {
-                enabled: true,
-                color: 'black',
-                style: {
-                  textShadow: 'none',
-                  HcTextStroke: null
+            series: [
+              {
+                name: 'Commits per contributors',
+                borderWidth: 1,
+                data: $scope.data,
+                dataLabels: {
+                  enabled: true,
+                  color: 'black',
+                  style: {
+                    textShadow: 'none',
+                    HcTextStroke: null
+                  }
                 }
               }
-            }]
+            ]
 
           });
 
@@ -317,9 +390,10 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
     };
   })
 
-  .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper, $timeout) {
+  .controller('MainCtrl', function ($scope, $http, $q, helper, $location, errorHelper, $timeout, $window) {
 
     $scope.errorHelper = errorHelper;
+    $scope.isTourOn = false;
 
     $scope.searchProject = function (query) {
 
@@ -467,36 +541,36 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
 
       var WEEK_DAYS = ['Sunday', 'Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday'];
 
-      var author2commits = _.groupBy(commits, function(commit) {
-          return commit.commit.author.name; // { john: [commits], jane: [commits] }
+      var author2commits = _.groupBy(commits, function (commit) {
+        return commit.commit.author.name; // { john: [commits], jane: [commits] }
       });
 
       var topTenAuthors = _(author2commits)
-        .map(function (commits, author) {
-          return { name: author, commitsNb : _(commits).size() };
-        })
-        .sortBy('commitsNb')
-        .last(10)
-        .reverse()
-        .pluck('name')
-        .valueOf()
-      ;
+          .map(function (commits, author) {
+            return { name: author, commitsNb: _(commits).size() };
+          })
+          .sortBy('commitsNb')
+          .last(10)
+          .reverse()
+          .pluck('name')
+          .valueOf()
+        ;
 
-      var data = _(topTenAuthors).reduce(function(allAuthorDayNbCommits, author, authorIdx) {
+      var data = _(topTenAuthors).reduce(function (allAuthorDayNbCommits, author, authorIdx) {
 
         var nbCommitsByWeekday = _(author2commits[author])
 
-          .groupBy(function(commit) {
-            var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
-            return moment(commitDateTime).weekday();
-          })
-          .mapValues(function (commits) {
-            return _(commits).size();
-          })
+            .groupBy(function (commit) {
+              var commitDateTime = commit.commit.author.date; // 2014-05-19T11:40:48Z
+              return moment(commitDateTime).weekday();
+            })
+            .mapValues(function (commits) {
+              return _(commits).size();
+            })
             .valueOf()
           ;
 
-        var authorDayNbCommits = _.map(WEEK_DAYS, function(day, dayIdx) {
+        var authorDayNbCommits = _.map(WEEK_DAYS, function (day, dayIdx) {
           var momentIdx = _.indexOf(moment.weekdays(), day);
           return [authorIdx, dayIdx, nbCommitsByWeekday[momentIdx] || 0];
         });
@@ -528,6 +602,10 @@ angular.module('githubClient', ['ui.bootstrap', 'ngAnimate'])
           updateContributorsHeatmap(commits);
 
         });
+
+      if ($scope.isTourOn) {
+        $window.hopscotch.showStep(1 /* idx */);
+      }
 
     };
 
